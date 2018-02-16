@@ -175,6 +175,7 @@ void mxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc)
         for(j = 0; j < len; j++)
         {
             for(k = 0; k < len; k++)
+                //(*(mxc + (len * j) + i)) += (*(mxa + (len * k) + i)) * (*(mxb + (len * j) + k));
                 (*(mxc + (len * i) + k)) += (*(mxa + (len * j) + k)) * (*(mxb + (len * i) + j));
         }  
     }
