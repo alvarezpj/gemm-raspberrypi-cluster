@@ -58,7 +58,7 @@ int main()
     MPI_Scatterv(b, scounts, displs, MPI_FLOAT, b, scounts[task_id], MPI_FLOAT, 0, MPI_COMM_WORLD);
     //MPI_Bcast(a, (LENGTH * LENGTH), MPI_FLOAT, 0, MPI_COMM_WORLD);   
     //MPI_Bcast(b, (LENGTH * LENGTH), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    pmxmultiplyfs();
+    pmxmultiplyfs((scounts[task_id] / LENGTH), LENGTH, a, b, c);
     MPI_Reduce(p, c, (LENGTH * LENGTH), MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     // end timer
