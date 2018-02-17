@@ -195,7 +195,7 @@ void mmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc)
 
     #pragma omp parallel num_threads(4)
     {
-        #pragma omp for private(i, j, k) collapse(3)
+        #pragma omp for private(i, j, k)
         for(i = 0; i < len; i++)
         {
             for(j = 0; j < len; j++)
