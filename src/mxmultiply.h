@@ -233,6 +233,22 @@ void pmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc, size_t task_id
 }
 
 
+/* parallel general matrix multiply v2 */
+void pmxmultiplyfs(size_t ncols, size_t nrows, float *mxa, float *mxb, float *mxc) 
+{
+    size_t i, j, k;
+
+    for(i = 0; i < ncols; i++)
+    {
+        for(j = 0; j < ncols; j++)
+        {
+            for(k = 0; k < nrows; k++)
+                (*(mxc + (nrows * j) + k)) += (*(mxa + (nrows * i) + k)) * (*(mxb + (ncols * i) + j));
+        } 
+    }
+}
+
+
 
 
 /***********************************************************************************
