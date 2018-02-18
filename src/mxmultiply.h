@@ -233,19 +233,22 @@ void pmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc, size_t task_id
 }
 
 
-/* parallel general matrix multiply v2 */
-void pmxmultiplyfs(size_t ncols, size_t nrows, float *mxa, float *mxb, float *mxc) 
+/* parallel general matrix multiply v2 */ 
+float *pmxmultiplyfs(size_t ncolsmxa, size_t nrowsmxa, float *mxa, size_t ncolsmxb, size_t nrowsmxb, float *mxb) 
 {
     size_t i, j, k;
+    float *rmx = calloc(nrowsmxa * ncolsmxb, sizeof(float));
 
-    for(i = 0; i < ncols; i++)
+    for(i = 0; i < ncolsmxa; i++)
     {
-        for(j = 0; j < ncols; j++)
+        for(j = 0; j < ncolsmxb; j++)
         {
-            for(k = 0; k < nrows; k++)
-                (*(mxc + (nrows * j) + k)) += (*(mxa + (nrows * i) + k)) * (*(mxb + (ncols * i) + j));
+            for(k = 0; k < nrowsmxa; k++)
+                (*(rmx + (nrowsmxa * j) + k)) += (*(mxa + (nrowsmxa * i) + k)) * (*(mxb + (ncolsmxb * i) + j));
         } 
     }
+
+    return rmx;
 }
 
 
@@ -377,7 +380,7 @@ float *mpvmxmultiplyfs(size_t len, float *mxa, size_t ncols, float *mxb)
 {
     float *buf = calloc(len * ncols, sizeof(float));
 
-    #pragma omp parallel firstprivate(len, mxa, mxb, buf, ei, si) num_threads(4)
+    #pragma omp parallel firstprivate(len, mxa, ncols, mxb, buf) num_threads(4)
     { 
         float32x4_t a, b, c;
         size_t i, j, k, reps = len / VECREG_LEN;

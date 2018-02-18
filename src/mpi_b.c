@@ -14,25 +14,14 @@ int main()
     size_t si, ei;
     double cpu_time;
     struct timespec start, end;
-    float *a, *b;
-    float *c = calloc(LENGTH * LENGTH, sizeof(float));
-    float *p = calloc(LENGTH * LENGTH, sizeof(float));
+    float *a, *b, *c, *ba, *bb, *p;
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &task_id);
 
-    if(task_id == MASTER)
-    {
-        a = malloc(LENGTH * LENGTH * sizeof(int));
-        b = malloc(LENGTH * LENGTH * sizeof(int));
-        mxinitf(LENGTH, a, 8);
-        mxinitf(LENGTH, b, 5);
-    }
     // start timer
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
-
-    mxtransposef(LENGTH, b);
 
     scounts = calloc(num_tasks, sizeof(int));
     displs = calloc(num_tasks, sizeof(int));
@@ -48,17 +37,24 @@ int main()
     for(i = 2; i < num_tasks; i++)
         displs[i] = displs[i - 1] + scounts[i - 1];
 
-    if(task_id != MASTER)
+    if(task_id == MASTER)
     {
-        a = malloc(LENGTH * scounts[task_id] * sizeof(float));
-        b = malloc(LENGTH * scounts[task_id] * sizeof(float));
+        a = malloc(LENGTH * LENGTH * sizeof(float));
+        b = malloc(LENGTH * LENGTH * sizeof(float));
+        c = calloc(LENGTH * LENGTH, sizeof(float));
+        mxinitf(LENGTH, a, 8);
+        mxinitf(LENGTH, b, 5);
+        mxtransposef(LENGTH, b);
     }
 
-    MPI_Scatterv(a, scounts, displs, MPI_FLOAT, a, scounts[task_id], MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Scatterv(b, scounts, displs, MPI_FLOAT, b, scounts[task_id], MPI_FLOAT, 0, MPI_COMM_WORLD);
-    //MPI_Bcast(a, (LENGTH * LENGTH), MPI_FLOAT, 0, MPI_COMM_WORLD);   
-    //MPI_Bcast(b, (LENGTH * LENGTH), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    pmxmultiplyfs((scounts[task_id] / LENGTH), LENGTH, a, b, c);
+    // declare arrays for block matrices
+    ba = malloc(scounts[task_id] * sizeof(float));
+    bb = malloc(scounts[task_id] * sizeof(float));
+
+    // scatter input matrices and compute product
+    MPI_Scatterv(a, scounts, displs, MPI_FLOAT, ba, scounts[task_id], MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(b, scounts, displs, MPI_FLOAT, bb, scounts[task_id], MPI_FLOAT, 0, MPI_COMM_WORLD);
+    p = pmxmultiplyfs((scounts[task_id] / LENGTH), LENGTH, ba, LENGTH, (scounts[task_id] / LENGTH), bb);
     MPI_Reduce(p, c, (LENGTH * LENGTH), MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     // end timer
@@ -67,14 +63,18 @@ int main()
     cpu_time = (end.tv_nsec - start.tv_nsec) / 1000000000.0;
     cpu_time += (end.tv_sec - start.tv_sec);
     printf("execution time (task %d): %.5f s\n", task_id, cpu_time);
+
+    MPI_Finalize(); 
+
     if(task_id == MASTER)
-        fprintmxf(LENGTH, LENGTH, c, 'r', "mpi_b.mx");
+    {
+        free(a);
+        free(b);
+        free(c); 
+    }
 
-    MPI_Finalize();       
-
-    free(a);
-    free(b);
-    free(c);
+    free(ba);
+    free(bb);
     free(p);
 
     return 0;
