@@ -20,6 +20,16 @@ int main()
     MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &task_id);
 
+    if(task_id == MASTER)
+    {
+        a = malloc(LENGTH * LENGTH * sizeof(float));
+        b = malloc(LENGTH * LENGTH * sizeof(float));
+        c = calloc(LENGTH * LENGTH, sizeof(float));
+        rmxinitf(LENGTH, a, 8);
+        rmxinitf(LENGTH, b, 5);
+        mxtransposef(LENGTH, b);
+    }
+
     // start timer
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
 
@@ -36,16 +46,6 @@ int main()
     displs[1] = scounts[0];
     for(i = 2; i < num_tasks; i++)
         displs[i] = displs[i - 1] + scounts[i - 1];
-
-    if(task_id == MASTER)
-    {
-        a = malloc(LENGTH * LENGTH * sizeof(float));
-        b = malloc(LENGTH * LENGTH * sizeof(float));
-        c = calloc(LENGTH * LENGTH, sizeof(float));
-        rmxinitf(LENGTH, a, 8);
-        rmxinitf(LENGTH, b, 5);
-        mxtransposef(LENGTH, b);
-    }
 
     // declare arrays for block matrices
     ba = malloc(scounts[task_id] * sizeof(float));
