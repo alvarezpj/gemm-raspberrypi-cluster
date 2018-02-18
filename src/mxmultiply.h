@@ -233,6 +233,25 @@ void pmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc, size_t task_id
 }
 
 
+/* parallel general matrix multiply v2 */ 
+float *pmxmultiplyfs(size_t ncolsmxa, size_t nrowsmxa, float *mxa, size_t ncolsmxb, size_t nrowsmxb, float *mxb) 
+{
+    size_t i, j, k;
+    float *rmx = calloc(nrowsmxa * ncolsmxb, sizeof(float));
+
+    for(i = 0; i < ncolsmxa; i++)
+    {
+        for(j = 0; j < ncolsmxb; j++)
+        {
+            for(k = 0; k < nrowsmxa; k++)
+                (*(rmx + (nrowsmxa * j) + k)) += (*(mxa + (nrowsmxa * i) + k)) * (*(mxb + (ncolsmxb * i) + j));
+        } 
+    }
+
+    return rmx;
+}
+
+
 
 
 /***********************************************************************************
@@ -344,6 +363,62 @@ float *mpvmxmultiplyf(size_t len, float *mxa, float *mxb, int task_id, int num_t
                 }
 
                 bufp = buf + (len * (i - si)) + j;
+                // compute entry
+                tmp = VEXTLN(c, 0) + VEXTLN(c, 1) + VEXTLN(c, 2) + VEXTLN(c, 3);
+                // store entry in result matrix
+                *(bufp) = tmp; 
+            } 
+        }
+    }
+
+    return buf;
+}
+
+
+/* multithreaded, parallel, and vectorized general matrix multiply v2 */
+float *mpvmxmultiplyfs(size_t len, float *mxa, size_t ncols, float *mxb)
+{
+    float *buf = calloc(len * ncols, sizeof(float));
+
+    #pragma omp parallel firstprivate(len, mxa, ncols, mxb, buf) num_threads(4)
+    { 
+        float32x4_t a, b, c;
+        size_t i, j, k, reps = len / VECREG_LEN;
+        float *mxap, *mxbp, *bufp, tmp;
+
+        // transpose matrix mxa
+        #pragma omp for
+        for(i = 0; i < len; i++)
+        {
+            for(j = (i + 1); j < len; j++)
+            {
+                tmp = *(mxa + (len * j) + i);
+                *(mxa + (len * j) + i) = *(mxa + (len * i) + j);
+                *(mxa + (len * i) + j) = tmp;
+            }
+        }
+
+        // multiply
+        #pragma omp for 
+        for(i = 0; i < ncols; i++)
+        {
+            mxap = mxa;
+
+            for(j = 0; j < len; j++)
+            {
+                c = VMULSC(c, 0.0); 
+                mxbp = mxb + (len * i);
+
+                for(k = 0; k < reps; k++)
+                {
+                    a = VECLOD(mxap); 
+                    b = VECLOD(mxbp);
+                    c = VMULAC(c, a, b); 
+                    mxap += VECREG_LEN;
+                    mxbp += VECREG_LEN;
+                }
+
+                bufp = buf + (len * i) + j;
                 // compute entry
                 tmp = VEXTLN(c, 0) + VEXTLN(c, 1) + VEXTLN(c, 2) + VEXTLN(c, 3);
                 // store entry in result matrix
