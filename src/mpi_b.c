@@ -42,8 +42,8 @@ int main()
         a = malloc(LENGTH * LENGTH * sizeof(float));
         b = malloc(LENGTH * LENGTH * sizeof(float));
         c = calloc(LENGTH * LENGTH, sizeof(float));
-        mxinitf(LENGTH, a, 8);
-        mxinitf(LENGTH, b, 5);
+        rmxinitf(LENGTH, a, 8);
+        rmxinitf(LENGTH, b, 5);
         mxtransposef(LENGTH, b);
     }
 
