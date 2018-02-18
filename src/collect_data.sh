@@ -10,7 +10,7 @@ size=512 # matrix size
 temp=`echo -n $file | wc -c`
 executable=`echo -n $file | head -c $(($temp-2))`
 
-parallel-ssh mkdir -p ~/gemm-raspberrypi-cluster/src/
+parallel-ssh -i -h ~/.ssh/hosts_file mkdir -p ~/gemm-raspberrypi-cluster/src/
 echo
 
 # compile and run program for 3 different sizes
@@ -19,7 +19,7 @@ do
     size=$(($size*2))
     sed -i "s/#define LENGTH.*/#define LENGTH        $size/" ./$file
     make -s $executable
-    parallel-scp ./$executable ~/gemm-raspberrypi-cluster/src/  
+    parallel-scp -v -h ~/.ssh/hosts_file ./$executable ~/gemm-raspberrypi-cluster/src/  
     echo
 
     echo results for $file \($size\x$size\)
@@ -28,7 +28,7 @@ do
     do
         echo -n $j\)" " 
         #./$executable
-        mpirun ~/gemm-raspberrypi-cluster/src/$executable
+        mpirun -np 12 -machinefile ~/.mpiconfig/nodes ~/gemm-raspberrypi-cluster/src/$executable
         sleep 60
     done
 
