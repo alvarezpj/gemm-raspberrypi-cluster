@@ -19,8 +19,8 @@ int main()
     float *b = malloc(LENGTH * LENGTH * sizeof(float));    
     float *c = calloc(LENGTH * LENGTH, sizeof(float));
 
-    rmxinitf(LENGTH, a, 8);
-    rmxinitf(LENGTH, b, 5);
+    mxinitf(LENGTH, a, 8);
+    mxinitf(LENGTH, b, 5);
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
