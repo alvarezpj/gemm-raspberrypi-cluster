@@ -11,44 +11,48 @@
 int main()
 { 
     int i, num_tasks, task_id, *rcounts, *displs; 
-    size_t ncols, si, ei;
+    size_t si, ei;
     double cpu_time;
     struct timespec start, end;
-    float *buffer;
+    float *buffer, *b, *c, *tmx;
     float *a = malloc(LENGTH * LENGTH * sizeof(float));
-    float *b = malloc(LENGTH * LENGTH * sizeof(float));    
-    float *c = calloc(LENGTH * LENGTH, sizeof(float));
-
-    mxinitf(LENGTH, a, 8);
-    mxinitf(LENGTH, b, 5);
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &task_id);
 
+    if(task_id == MASTER)
+    {
+        b = malloc(LENGTH * LENGTH * sizeof(float)); 
+        c = calloc(LENGTH * LENGTH, sizeof(float));
+        rmxinitf(LENGTH, a, 8);
+        rmxinitf(LENGTH, b, 5);
+    }
+
     // start timer
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
 
-    buffer = mpvmxmultiplyf(LENGTH, a, b, task_id, num_tasks, &ncols);
+    rcounts = calloc(num_tasks, sizeof(int));
+    displs = calloc(num_tasks, sizeof(int));
 
-    if(task_id == MASTER)
+    for(i = 0; i < num_tasks; i++)
     {
-        rcounts = calloc(num_tasks, sizeof(int));
-        displs = calloc(num_tasks, sizeof(int));
-
-        for(i = 0; i < num_tasks; i++)
-        {
-            si = gsif(LENGTH, i, num_tasks);
-            ei = geif(LENGTH, i, num_tasks);
-            rcounts[i] = LENGTH * (ei - si); 
-        }
-
-        displs[1] = rcounts[0];
-        for(i = 2; i < num_tasks; i++) 
-            displs[i] = displs[i - 1] + rcounts[i - 1]; 
+        si = gsif(LENGTH, i, num_tasks);
+        ei = geif(LENGTH, i, num_tasks);
+        rcounts[i] = LENGTH * (ei - si); 
     }
 
-    MPI_Gatherv(buffer, LENGTH * ncols, MPI_FLOAT, c, rcounts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    displs[1] = rcounts[0];
+    for(i = 2; i < num_tasks; i++) 
+        displs[i] = displs[i - 1] + rcounts[i - 1]; 
+
+    tmx = malloc(rcounts[task_id] * sizeof(float));
+
+    MPI_Bcast(a, (LENGTH * LENGTH), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(b, rcounts, displs, MPI_FLOAT, tmx, rcounts[task_id], MPI_FLOAT, 0, MPI_COMM_WORLD);
+    // multiply matrices
+    buffer = mpvmxmultiplyfs(LENGTH, a, (rcounts[task_id] / LENGTH), tmx);
+    MPI_Gatherv(buffer, rcounts[task_id], MPI_FLOAT, c, rcounts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // end timer
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
@@ -59,10 +63,15 @@ int main()
 
     MPI_Finalize();       
 
+    if(task_id == MASTER)
+    {
+        free(b);
+        free(c);
+    }
+
     free(a);
-    free(b);
-    free(c);
     free(buffer);
+    free(tmx);
 
     return 0;
 }
