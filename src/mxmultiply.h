@@ -1,5 +1,4 @@
-/*  optimizing GEMM for a 12-node Raspberry Pi cluster
-
+/* 
     assumptions: 
         * matrices are just (one-dimensional) arrays of floating point numbers
         * all matrices are square
@@ -10,11 +9,10 @@
         1. multithreaded (OpenMP) 
         2. parallel (MPI) 
         3. vectorized (NEON)
-        4. multithreaded, parallel and vectorized (OpenMP + MPI + NEON)
+        4. multithreaded, parallel, and vectorized (OpenMP + MPI + NEON)
 
-    note: MPI calls are made inside a main() function
-
-    code tested on Raspbian Stretch with GCC 6.3 and MPICH 3.2 */
+    note: MPI calls are made inside main functions
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -51,7 +49,7 @@ void mxinitf(size_t len, float *mx, size_t mod)
 }
 
 
-/* initialize matrix with random floating point numbers in range [0.0, ubound] */
+/* initialize matrix with random floating point numbers in range [0.0, upper bound] */
 void rmxinitf(size_t len, float *mx, float ubound)
 {
     size_t i;
@@ -214,7 +212,8 @@ void mmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc)
 *  MPI                                                                             *
 ***********************************************************************************/
 
-/* parallel general matrix multiply */ 
+/* parallel general matrix multiply
+   note: for use when all nodes have copies of input matrices mxa and mxb */ 
 void pmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc, size_t task_id, size_t num_tasks)
 {
     size_t i, j, k, si, ei;
@@ -233,7 +232,8 @@ void pmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc, size_t task_id
 }
 
 
-/* parallel general matrix multiply v2 */ 
+/* parallel general matrix multiply
+   note: for use when master node sends blocks of input matrices mxa and mxb to all nodes */ 
 float *pmxmultiplyfs(size_t ncolsmxa, size_t nrowsmxa, float *mxa, size_t ncolsmxb, size_t nrowsmxb, float *mxb) 
 {
     size_t i, j, k;
@@ -311,7 +311,8 @@ void vmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc)
 *  OpenMP + MPI + NEON                                                             *
 ***********************************************************************************/
 
-/* multithreaded, parallel, and vectorized general matrix multiply */
+/* multithreaded, parallel, and vectorized general matrix multiply
+   note: for use when all nodes have copies of input matrices mxa and mxb */
 float *mpvmxmultiplyf(size_t len, float *mxa, float *mxb, int task_id, int num_tasks, size_t *ncols)
 {
     size_t si, ei;
@@ -375,7 +376,8 @@ float *mpvmxmultiplyf(size_t len, float *mxa, float *mxb, int task_id, int num_t
 }
 
 
-/* multithreaded, parallel, and vectorized general matrix multiply v2 */
+/* multithreaded, parallel, and vectorized general matrix multiply v2
+   note: for use when master node broadcasts mxa and sends blocks of mxb to all nodes */
 float *mpvmxmultiplyfs(size_t len, float *mxa, size_t ncols, float *mxb)
 {
     float *buf = calloc(len * ncols, sizeof(float));
