@@ -67,6 +67,14 @@ pscp ./omp_mpi_neon ~/home/pi/binaries
 runmpi /home/pi/binaries/omp_mpi_neon 
 ```  
 
+The steps for compiling and running [mpi.c](./src/mpi.c) are similar. The remaining programs, which do not use MPI, can be compiled and run on the master node. For [neon.c](./src/neon.c), 
+
+```
+# while in the gemm-raspberrypi-cluster directory
+make neon
+./neon
+```
+
 The script [collect_data.sh](./src/collect_data.sh) can be used to collect timing data by running an executable ten times for three different matrix sizes. By default, it tries matrix sizes 1024 x 1024, 2048 x 2048, and 4096 x 4096. For each matrix size, it compiles and runs the executable ten times. To use it, simply run ```./collect_data.sh <file name>```. For instance, ```./collect_data.sh omp_mpi_neon```.  
 
 
