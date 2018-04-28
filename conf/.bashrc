@@ -113,8 +113,7 @@ if ! shopt -oq posix; then
 fi
 
 
-
-# Settings and alias definitions for master node
+############## SETTINGS AND ALIAS DEFINITIONS FOR MASTER NODE ##############
 
 # bind threads to cores 0-3
 export GOMP_CPU_AFFINITY="0-3"
@@ -124,7 +123,7 @@ alias pssh="parallel-ssh -i -h ~/.ssh/hosts_file"
 alias pscp="parallel-scp -v -h ~/.ssh/hosts_file"
 
 # default configuration for mpirun
-alias runmpi="mpirun -np 12 -machinefile ~/.mpiconfig/nodes"
+alias runmpi="mpirun -np 12 -machinefile ~/.mpiconfig/machine_file"
 
 # ssh to individual nodes
 alias node1="ssh pi@192.168.1.101"
@@ -145,3 +144,4 @@ alias poweroff-cluster="pssh sudo shutdown \"now\"; sudo shutdown \"now\""
 # reboot cluster
 alias reboot-cluster="pssh sudo shutdown --reboot \"now\"; sudo shutdown --reboot \"now\""
 
+############################################################################
