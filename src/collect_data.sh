@@ -1,6 +1,12 @@
 #!/bin/bash
 
-# collect sample data
+##################################################################################################
+# collect sample data                                                                            #
+#                                                                                                #
+# this script is designed to be used with programs which make use of MPI. The script receives    # 
+# the name of the source file (e.g. mpi.c), compiles it and runs the resulting executable across #
+# the cluster. This particular script makes use of 12 nodes and all four cores in each.          #
+##################################################################################################
 
 
 file=$1  # source filename
