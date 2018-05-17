@@ -21,6 +21,8 @@
 #include <arm_neon.h>
 
 
+// number of threads for OpenMP
+#define NUMTHREADS                             4
 // number of elements per vector register
 #define VECREG_LEN                             4 
 // vector load
@@ -191,7 +193,7 @@ void mmxmultiplyf(size_t len, float *mxa, float *mxb, float *mxc)
 {
     size_t i, j, k;
 
-    #pragma omp parallel num_threads(4)
+    #pragma omp parallel num_threads(NUMTHREADS)
     {
         #pragma omp for private(i, j, k)
         for(i = 0; i < len; i++)
@@ -325,7 +327,7 @@ float *mpvmxmultiplyf(size_t len, float *mxa, float *mxb, int task_id, int num_t
     *ncols = ei - si;
     buf = calloc(len * (*ncols), sizeof(float));
 
-    #pragma omp parallel firstprivate(len, mxa, mxb, buf, ei, si) num_threads(4)
+    #pragma omp parallel firstprivate(len, mxa, mxb, buf, ei, si) num_threads(NUMTHREADS)
     { 
         float32x4_t a, b, c;
         size_t i, j, k, reps = len / VECREG_LEN;
@@ -382,7 +384,7 @@ float *mpvmxmultiplyfs(size_t len, float *mxa, size_t ncols, float *mxb)
 {
     float *buf = calloc(len * ncols, sizeof(float));
 
-    #pragma omp parallel firstprivate(len, mxa, ncols, mxb, buf) num_threads(4)
+    #pragma omp parallel firstprivate(len, mxa, ncols, mxb, buf) num_threads(NUMTHREADS)
     { 
         float32x4_t a, b, c;
         size_t i, j, k, reps = len / VECREG_LEN;
